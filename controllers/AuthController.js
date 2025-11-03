@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt.js');
+const bcrypt = require('bcryptjs');
 const { db } = require('../db.js');
 
 const signToken = (id, role) => {
@@ -41,3 +41,5 @@ const login = (req, res) => {
         });
     });
 };
+
+module.exports={login}

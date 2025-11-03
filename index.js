@@ -12,7 +12,7 @@ app.use(cors());
 
 app.use(express.json());
 app.use('/trips', TripRouter);
-app.use('/auth', AuthRouter);
+app.use('/auth', authRouter);
 ///app.use('/api/v1/users', UserRouter);
 
 module.exports={app};
