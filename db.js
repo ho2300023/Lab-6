@@ -16,7 +16,16 @@ const createTripTable = `CREATE TABLE IF NOT EXISTS TRIP (
     CURRENCYCODE TEXT DEFAULT 'N/A'
 )`;
 
+const createUserTable=`CREATE TABLE IF NOT EXISTS USER (
+ID INEGER PRIMARY KEY AUTOINCREMENT,
+NAME TEXT NOT NULL,
+EMAIL TEXT UNIQUE NOT NULL,
+ROLE TEXT NOT NULL,
+PASSWORD TEXT NOT NULL 
+)`;
+
 module.exports = {
     db,
-    createTripTable
+    createTripTable,
+    createUserTable,
 };
