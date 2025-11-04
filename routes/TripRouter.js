@@ -3,9 +3,11 @@ const {
     createTrip,
     retrieveAllTrips,
 } = require('../controllers/TripController');
-const tripRouter = express.Router();
+const { verifyToken } = require()
+const tripRouter = express.Router('../controllers/authController');
 
-tripRouter
+
+tripRouter.use(verifyToken)
 .route('/')
 .post(createTrip)
 .get(retrieveAllTrips);

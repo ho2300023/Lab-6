@@ -7,6 +7,64 @@ const signToken = (id, role) => {
         {expiresIn: process.env.JWT_EXPIRES_IN});
 }
 
+// --- VERIFY TOKEN MIDDLEWARE ---
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(403).send('Access denied: Token missing or malformed');
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send('Invalid or expired token');
+    }
+
+    req.user = { id: decoded.id, role: decoded.role };
+    next();
+  });
+};
+
+const signUp = (req, res) => {
+    const email = req.body.email;
+    const name = req.body.name;
+    const password = req.body.password;
+
+    if (!name || !email || !password) {
+        return res.status(400).send('Please provide email and password. ');
+    }
+    console.log("Login attempt:", email, password);
+    const query = `SELECT * FROM USER WHERE EMAIL='${email}'`
+    db.get(query, (err, row) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).send('Database error')
+        }
+        bcrypt.compare(password, row.PASSWORD, (err, isMatch) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).send('Error verifying password. ')
+        }         
+        const token = signToken(row.ID, row.ROLE);
+        
+        return res.status(200).json({
+            message: 'Login successful',
+            user: {
+                id: row.ID,
+                name: row.NAME,
+                email: row.EMAIL,
+                role: row.ROLE,
+            },
+            token,
+        });
+        });
+    });
+}
+
+
+
 const login = (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
