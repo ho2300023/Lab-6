@@ -23,14 +23,23 @@ const createTrip = (req, res) => {
     INSERT INTO TRIP (
       DESTINATIONNAME, LOCATION, CONTINENT, LANGUAGE, DESCRIPTION,
       FLIGHTCOST, ACCOMMODATIONCOST, MEALCOST, VISACOST, TRANSPORTATIONCOST, CURRENCYCODE
-    )
-    VALUES ('${destinationName}','${location}','${continent}','${language}',
-    '${description}',${flightCost},${accommodationCost},${mealCost},
-    ${visaCost},${transportationCost},'${currencyCode}'
-    )
-  `;
- 
-  db.run(query, (err) => {
+    ) VALUES ( ?,?,?,?,?,?,?,?,?,?,?)  ) `;
+
+    const parms = [
+      destinationName, location, continent, language, description, flightCost, accommodationCost, mealCost,
+      visaCost, transportationCost, currencyCode
+    ];
+//  )
+//     VALUES ('${destinationName}','${location}','${continent}','${language}',
+//     '${description}',${flightCost},${accommodationCost},${mealCost},
+//     ${visaCost},${transportationCost},'${currencyCode}'
+//     )
+res.cookie('TripCreated', destinationName, {
+  maxAge: 15 * 60 * 1000,  // 15 minutes
+  httpOnly: true
+});
+
+ db.run(query, parms, function (err) {
     if (err) {
       console.log(err);
       return res.status(500).json({
@@ -43,6 +52,25 @@ const createTrip = (req, res) => {
       message: 'Trip created successfully'
     });
   });
+}
+const retrieveTripById = (req, res) => {
+  const id = req.parms.id;
+  const query = `SELECT * FROM TRIP WHERE ID = ?`;
+
+ db.get(query, [id], function (err) {
+    if (err) {
+      console.log(err);
+      return res.status(500).json({
+        message: 'Database error',
+        error: err.message
+      });
+    }
+ 
+    return res.status(201).json({
+      message: 'Trip created successfully'
+    });
+  });
+ 
 };
 
 const retrieveAllTrips = (req, res) => {
@@ -58,5 +86,6 @@ const retrieveAllTrips = (req, res) => {
 
 module.exports = {
     createTrip,
-    retrieveAllTrips
+    retrieveAllTrips,
+    retrieveTripById
 };

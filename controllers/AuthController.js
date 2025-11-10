@@ -33,35 +33,57 @@ const signUp = (req, res) => {
     const password = req.body.password;
 
     if (!name || !email || !password) {
-        return res.status(400).send('Please provide email and password. ');
+        return res.status(400).send('Please provide name, email, and password.');
     }
-    console.log("Login attempt:", email, password);
-    const query = `SELECT * FROM USER WHERE EMAIL='${email}'`
-    db.get(query, (err, row) => {
+
+    // Check if the user already exists
+    const checkQuery = `SELECT * FROM USER WHERE EMAIL='${email}'`;
+    db.get(checkQuery, (err, row) => {
         if (err) {
             console.log(err);
-            return res.status(500).send('Database error')
+            return res.status(500).send('Database error');
         }
-        bcrypt.compare(password, row.PASSWORD, (err, isMatch) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).send('Error verifying password. ')
-        }         
-        const token = signToken(row.ID, row.ROLE);
-        
-        return res.status(200).json({
-            message: 'Login successful',
-            user: {
-                id: row.ID,
-                name: row.NAME,
-                email: row.EMAIL,
-                role: row.ROLE,
-            },
-            token,
-        });
+
+        if (row) {
+            return res.status(400).send('User already exists.');
+        }
+
+        // Hash password
+        bcrypt.hash(password, 10, (err, hashedPassword) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).send('Error hashing password.');
+            }
+
+            const insertQuery = `
+                INSERT INTO USER (NAME, EMAIL, PASSWORD, ROLE)
+                VALUES ('${name}', '${email}', '${hashedPassword}', 'user')
+            `;
+
+            db.run(insertQuery, function (err) {
+                if (err) {
+                    console.log(err);
+                    return res.status(500).send('Error creating user.');
+                }
+
+                const newUserId = this.lastID;
+                const token = signToken(newUserId, 'user');
+
+                return res.status(201).json({
+                    message: 'Signup successful',
+                    user: {
+                        id: newUserId,
+                        name,
+                        email,
+                        role: 'user',
+                    },
+                    token,
+                });
+            });
         });
     });
-}
+};
+
 
 
 
