@@ -27,61 +27,47 @@ const verifyToken = (req, res, next) => {
   });
 };
 
+// POST /signup
 const signUp = (req, res) => {
-    const email = req.body.email;
-    const name = req.body.name;
-    const password = req.body.password;
+  const email = req.body.email;
+  const password = req.body.password;
+  const role = 'user'; // default to non-admin
 
-    if (!name || !email || !password) {
-        return res.status(400).send('Please provide name, email, and password.');
+  if (!email || !password) {
+    return res.status(400).send('Please provide email, and password.');
+  }
+
+  bcrypt.hash(password, 10, (err, hashedPassword) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Error hashing password.');
     }
 
-    // Check if the user already exists
-    const checkQuery = `SELECT * FROM USER WHERE EMAIL='${email}'`;
-    db.get(checkQuery, (err, row) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).send('Database error');
+    // Insert
+    const query = `
+      INSERT INTO USER (EMAIL, ROLE, PASSWORD)
+      VALUES ('${email}', '${role}', '${hashedPassword}')
+    `;
+
+    db.run(query, (err) => {
+      if (err) {
+        // Handle unique constraint violation
+        if (err.message.includes('UNIQUE constraint')) {
+          return res.status(400).send('Email already exists.');
         }
+        console.error(err);
+        return res.status(500).send('Database error.');
+      }
 
-        if (row) {
-            return res.status(400).send('User already exists.');
-        }
-
-        // Hash password
-        bcrypt.hash(password, 10, (err, hashedPassword) => {
-            if (err) {
-                console.log(err);
-                return res.status(500).send('Error hashing password.');
-            }
-
-            const insertQuery = `
-                INSERT INTO USER (NAME, EMAIL, PASSWORD, ROLE)
-                VALUES ('${name}', '${email}', '${hashedPassword}', 'user')
-            `;
-
-            db.run(insertQuery, function (err) {
-                if (err) {
-                    console.log(err);
-                    return res.status(500).send('Error creating user.');
-                }
-
-                const newUserId = this.lastID;
-                const token = signToken(newUserId, 'user');
-
-                return res.status(201).json({
-                    message: 'Signup successful',
-                    user: {
-                        id: newUserId,
-                        name,
-                        email,
-                        role: 'user',
-                    },
-                    token,
-                });
-            });
-        });
+      // Create token
+      const token = signToken(this.lastID, role);
+      return res.status(201).json({
+        status: 'success',
+        message: 'Registration successful',
+        token,
+      });
     });
+  });
 };
 
 
@@ -122,4 +108,10 @@ const login = (req, res) => {
     });
 };
 
-module.exports={login}
+module.exports={
+    login,
+    signUp,
+    verifyToken,
+    
+};
+
